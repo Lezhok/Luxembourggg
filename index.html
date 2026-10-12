@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оцінювання: Знос основних засобів</title>
+    <!-- Підключення шрифту -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Підключення Chart.js для інтерактивного графіка -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a53d0;
+            --secondary: #6c757d;
+            --success: #2ec4b6;
+            --info: #4cc9f0;
+            --warning: #ffb703;
+            --danger: #f77f00;
+            --critical: #e63946;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg-gradient);
+            color: #2b2d42;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        h1, h2, h3 {
+            color: #1d3557;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 { font-size: 2em; font-weight: 700; margin-bottom: 5px;}
+        h2 { font-size: 1.2em; font-weight: 500; color: var(--secondary); margin-top: 0;}
+
+        .section {
+            margin-bottom: 35px;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border-left: 5px solid var(--primary);
+            transition: transform 0.3s ease;
+        }
+        
+        .section:hover {
+            transform: translateY(-2px);
+        }
+
+        .theory-section { border-left-color: var(--secondary); }
+        .result-section { 
+            border-left-color: var(--success); 
+            display: none; 
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #edf2f4;
+        }
+        
+        th { 
+            background-color: #f8f9fa; 
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        tr:hover td { background-color: #f8f9fa; }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .form-group label {
+            flex: 1;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .form-group input {
+            flex: 1.5;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        button.btn-primary { background-color: var(--primary); color: white; }
+        button.btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 12px rgba(67, 97, 238, 0.2); }
+        
+        button.btn-danger { background-color: #fff; color: var(--critical); border: 2px solid var(--critical); }
+        button.btn-danger:hover { background-color: var(--critical); color: #fff; }
+        
+        button.btn-success { background-color: var(--success); color: white; width: 100%; font-size: 1.1em; padding: 15px;}
+        button.btn-success:hover:not(:disabled) { background-color: #239b90; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(46, 196, 182, 0.3); }
+        button:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .error {
+            color: var(--critical);
+            font-weight: 600;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+            padding: 12px;
+            background-color: #ffe5e5;
+            border-radius: 8px;
+            border-left: 4px solid var(--critical);
+            animation: fadeIn 0.3s;
+        }
+        
+        .badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .level-Оптимальний { background-color: var(--success); }
+        .level-Задовільний { background-color: var(--info); color: #1d3557;}
+        .level-Незадовільний { background-color: var(--warning); color: #1d3557; }
+        .level-Небезпечний { background-color: var(--danger); }
+        .level-Критичний { background-color: var(--critical); }
+        
+        .threshold-table td { font-weight: 500; font-size: 0.9em;}
+        
+        .conclusion { 
+            font-style: italic; 
+            font-size: 1.1em; 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            color: #495057;
+            line-height: 1.8;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-top: 30px;
+        }
+        
+        .source-text {
+            font-size: 0.85em;
+            color: var(--secondary);
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+        }
+        
+        .delete-btn {
+            padding: 6px 12px;
+            background-color: transparent;
+            color: var(--critical);
+            border: 1px solid var(--critical);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .delete-btn:hover {
+            background-color: var(--critical);
+            color: white;
+        }
+
+        /* Адаптивність для телефонів */
+        @media (max-width: 600px) {
+            .form-group { flex-direction: column; align-items: stretch; gap: 5px; }
+            .btn-group { flex-direction: column; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Економічна безпека держави</h1>
+    <h2>Індикатор: Ступінь зносу основних засобів промисловості</h2>
+
+    <!-- Теоретична частина -->
+    <div class="section theory-section">
+        <h3>📚 Методологія розрахунку</h3>
+        <p><strong>Формула:</strong> СЗ = (З / ПВ) × 100%</p>
+        <p style="font-size: 0.95em; color: #495057;">
+           Де: <b>СЗ</b> — ступінь зносу основних засобів (%); 
+           <b>З</b> — сума накопиченої амортизації, млн грн; 
+           <b>ПВ</b> — первісна вартість основних засобів, млн грн.
+        </p>
+        
+        <table class="threshold-table">
+            <tr>
+                <td class="level-Оптимальний" style="color:white">[0; 35] %</td>
+                <td class="level-Задовільний">(35; 45] %</td>
+                <td class="level-Незадовільний">(45; 55] %</td>
+                <td class="level-Небезпечний" style="color:white">(55; 65] %</td>
+                <td class="level-Критичний" style="color:white">Більше 65 %</td>
+            </tr>
+            <tr>
+                <td>Оптимальний</td>
+                <td>Задовільний</td>
+                <td>Незадовільний</td>
+                <td>Небезпечний</td>
+                <td>Критичний</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Введення даних -->
+    <div class="section">
+        <h3>✍️ Введення вихідних даних</h3>
+        
+        <div class="form-group">
+            <label for="yearInput">Рік дослідження:</label>
+            <input type="number" id="yearInput" placeholder="Наприклад, 2021" min="1991" max="2100">
+        </div>
+        <div class="form-group">
+            <label for="depreciationInput">Сума зносу (млн грн):</label>
+            <input type="number" id="depreciationInput" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+            <label for="initialValueInput">Первісна вартість (млн грн):</label>
+            <input type="number" id="initialValueInput" placeholder="0.00" step="0.01" min="0.01">
+        </div>
+        
+        <div id="errorMessage" class="error"></div>
+        
+        <div class="btn-group">
+            <button class="btn-primary" onclick="addYearData()">➕ Додати рік</button>
+            <button class="btn-danger" onclick="clearData()">🗑️ Очистити дані</button>
+        </div>
+    </div>
+
+    <!-- Таблиця даних -->
+    <div class="section">
+        <h3>📊 Введені дані</h3>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Рік</th>
+                    <th>Сума зносу</th>
+                    <th>Первісна вартість</th>
+                    <th>Дія</th>
+                </tr>
+            </thead>
+            <tbody id="dataTableBody">
+                <tr id="emptyRow"><td colspan="4" style="color: #6c757d;">Дані поки не додані. Заповніть форму вище.</td></tr>
+            </tbody>
+        </table>
+        
+        <button class="btn-success" onclick="calculateSecurity()" id="calcBtn" disabled>🚀 Розрахувати та оцінити безпеку</button>
+    </div>
+
+    <!-- Результати -->
+    <div class="section result-section" id="resultSection">
+        <h3>🎯 Результати оцінювання</h3>
+        
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Рік</th>
+                    <th>Ступінь зносу (%)</th>
+                    <th>Рівень безпеки</th>
+                </tr>
+            </thead>
+            <tbody id="resultTableBody"></tbody>
+            <tfoot>
+                <tr style="background-color: #f8f9fa; font-weight: bold;">
+                    <td>Середнє значення</td>
+                    <td id="avgValueCell"></td>
+                    <td id="avgLevelCell"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- Контейнер для графіка -->
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <h4 style="margin-top: 40px;">📝 Аналітичний висновок</h4>
+        <div class="conclusion" id="conclusionText"></div>
+    </div>
+
+    <div class="source-text">
+        Розроблено як навчальне практичне завдання.<br>
+        <strong>Методологія:</strong> Наказ Мінекономіки від 29.10.2013 р. № 1277.
+    </div>
+</div>
+
+<script>
+    let dataRecords = [];
+    let trendChartInstance = null; // Змінна для зберігання об'єкта графіка
+
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.innerText = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => { errorDiv.style.display = 'none'; }, 4000);
+    }
+
+    function addYearData() {
+        const year = parseInt(document.getElementById('yearInput').value);
+        const depreciation = parseFloat(document.getElementById('depreciationInput').value);
+        const initialValue = parseFloat(document.getElementById('initialValueInput').value);
+
+        if (isNaN(year) || year < 1991 || year > 2100) return showError("Введіть коректний рік (від 1991 до 2100).");
+        if (isNaN(depreciation) || depreciation < 0) return showError("Сума зносу повинна бути ≥ 0.");
+        if (isNaN(initialValue) || initialValue <= 0) return showError("Первісна вартість повинна бути > 0.");
+        if (depreciation > initialValue) return showError("Сума зносу не може перевищувати первісну вартість.");
+        if (dataRecords.some(r => r.year === year)) return showError(`Дані за ${year} рік вже існують.`);
+
+        dataRecords.push({ year, depreciation, initialValue });
+        dataRecords.sort((a, b) => a.year - b.year); // Сортування за роками
+        
+        updateDataTable();
+        
+        document.getElementById('yearInput').value = year + 1;
+        document.getElementById('depreciationInput').value = '';
+        document.getElementById('initialValueInput').value = '';
+        document.getElementById('resultSection').style.display = 'none';
+        document.getElementById('depreciationInput').focus();
+    }
+
+    function removeYear(yearToRemove) {
+        dataRecords = dataRecords.filter(r => r.year !== yearToRemove);
+        updateDataTable();
+        document.getElementById('resultSection').style.display = 'none';
+    }
+
+    function clearData() {
+        dataRecords = [];
+        updateDataTable();
+        document.getElementById('resultSection').style.display = 'none';
+        document.getElementById('yearInput').value = '';
+    }
+
+    function updateDataTable() {
+        const tbody = document.getElementById('dataTableBody');
+        tbody.innerHTML = '';
+        
+        if (dataRecords.length === 0) {
+            tbody.innerHTML = '<tr id="emptyRow"><td colspan="4" style="color: #6c757d;">Дані поки не додані. Заповніть форму вище.</td></tr>';
+            document.getElementById('calcBtn').disabled = true;
+            return;
+        }
+        
+        document.getElementById('calcBtn').disabled = false;
+        
+        dataRecords.forEach(record => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${record.year}</strong></td>
+                <td>${record.depreciation.toLocaleString('uk-UA', {minimumFractionDigits: 2})}</td>
+                <td>${record.initialValue.toLocaleString('uk-UA', {minimumFractionDigits: 2})}</td>
+                <td><button class="delete-btn" onclick="removeYear(${record.year})">Видалити</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function determineLevel(value) {
+        if (value <= 35.0) return "Оптимальний";
+        if (value <= 45.0) return "Задовільний";
+        if (value <= 55.0) return "Незадовільний";
+        if (value <= 65.0) return "Небезпечний";
+        return "Критичний";
+    }
+
+    function drawChart() {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        // Знищуємо старий графік, якщо він існує, перед малюванням нового
+        if (trendChartInstance) {
+            trendChartInstance.destroy();
+        }
+
+        const labels = dataRecords.map(r => r.year.toString());
+        const dataValues = dataRecords.map(r => ((r.depreciation / r.initialValue) * 100).toFixed(2));
+
+        trendChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ступінь зносу (%)',
+                    data: dataValues,
+                    borderColor: '#4361ee',
+                    backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#4361ee',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.3 // Плавність ліній
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(29, 53, 87, 0.9)',
+                        titleFont: { family: 'Montserrat', size: 14 },
+                        bodyFont: { family: 'Montserrat', size: 14 },
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) { return context.parsed.y + ' %'; }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#e9ecef' },
+                        title: { display: true, text: 'Відсоток зносу (%)', font: {family: 'Montserrat', weight: 'bold'} }
+                    },
+                    x: {
+                        grid: { display: false },
+                        title: { display: true, text: 'Роки', font: {family: 'Montserrat', weight: 'bold'} }
+                    }
+                }
+            }
+        });
+    }
+
+    function calculateSecurity() {
+        const tbody = document.getElementById('resultTableBody');
+        tbody.innerHTML = '';
+        let sumIndicators = 0;
+
+        dataRecords.forEach(record => {
+            const indicator = (record.depreciation / record.initialValue) * 100;
+            sumIndicators += indicator;
+            const level = determineLevel(indicator);
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${record.year}</strong></td>
+                <td>${indicator.toFixed(2)} %</td>
+                <td><span class="badge level-${level}">${level}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const avgIndicator = sumIndicators / dataRecords.length;
+        const avgLevel = determineLevel(avgIndicator);
+        
+        document.getElementById('avgValueCell').innerText = `${avgIndicator.toFixed(2)} %`;
+        document.getElementById('avgLevelCell').innerHTML = `<span class="badge level-${avgLevel}">${avgLevel}</span>`;
+
+        let trendText = "";
+        if (dataRecords.length > 1) {
+            const firstVal = (dataRecords[0].depreciation / dataRecords[0].initialValue) * 100;
+            const lastVal = (dataRecords[dataRecords.length - 1].depreciation / dataRecords[dataRecords.length - 1].initialValue) * 100;
+            const diff = lastVal - firstVal;
+            
+            if (diff > 2) {
+                trendText = `📉 <strong>Тенденція:</strong> Спостерігається негативна тенденція до зростання зносу основних засобів на ${diff.toFixed(2)} відсоткових пунктів протягом періоду. Це свідчить про старіння виробничих фондів. `;
+            } else if (diff < -2) {
+                trendText = `📈 <strong>Тенденція:</strong> Спостерігається стійка позитивна тенденція до оновлення матеріально-технічної бази: ступінь зносу знизився на ${Math.abs(diff).toFixed(2)} в.п. `;
+            } else {
+                trendText = `📊 <strong>Тенденція:</strong> Ступінь зносу основних засобів залишається відносно стабільним без різких коливань. `;
+            }
+        }
+
+        let levelAnalysisText = "<br><br><strong>Висновок:</strong> ";
+        switch (avgLevel) {
+            case "Оптимальний": levelAnalysisText += "Середнє значення перебуває в оптимальній зоні. Держава володіє потужним і новим виробничим апаратом."; break;
+            case "Задовільний": levelAnalysisText += "Стан є задовільним. Промисловість потребує поступових інвестицій, проте безпосередніх загроз немає."; break;
+            case "Незадовільний": levelAnalysisText += "Зафіксовано незадовільний стан фондів. Обладнання зношене, що знижує продуктивність та створює ризики."; break;
+            case "Небезпечний": levelAnalysisText += "Ситуація небезпечна: більшість засобів застаріли. Високий ризик втрати промислового потенціалу."; break;
+            case "Критичний": levelAnalysisText += "Критичний рівень! Фонди вичерпали ресурс. Необхідне негайне та масштабне інвестування в оновлення."; break;
+        }
+
+        document.getElementById('conclusionText').innerHTML = trendText + levelAnalysisText;
+        document.getElementById('resultSection').style.display = 'block';
+        
+        // Малюємо графік
+        drawChart();
+        
+        // Плавна прокрутка
+        setTimeout(() => {
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+</script>
+</body>
+</html>
